@@ -1,12 +1,30 @@
 from VOBJ import createVector
-from ObjectDef import Object
-from GuiHitboxOBJ import GUI_REGION
 import colorsys
 import pygame
 
 GUI_OBJECTS = []  # this Holds all the main wrapper objects created
 pygame.font.init()  # used for font... duh
 GLOBAL_FONT = "Century Gothic"
+
+class GUI_REGION:
+	def __init__(self, x, y, w, h):
+		self.HB_pos = createVector(x, y)
+		self.HB_dim = createVector(w, h)
+
+	def IN_COLLISION_CHECK(self, mVec):
+		if mVec[0] > self.HB_pos.x - 2 and mVec[0] < self.HB_pos.x + self.HB_dim.x + 2:
+			if mVec[1] > self.HB_pos.y - 10 and mVec[1] < self.HB_pos.y + self.HB_dim.y + 2:
+				# mouseRelativeToBox = createVector(mVec[0] - self.HB_pos.x, mVec[1] - self.HB_pos.y)
+				return True
+		return False
+
+class Object(GUI_REGION):
+	def __init__(self, x, y, w, h):
+		super().__init__(x, y, w, h)
+		self.pos = createVector(x, y)
+		self.dimensions = createVector(w, h)
+
+		self.mouseReference = (0, 0)
 
 # Colour Conversion functions mainly used in colour slider
 def hsv2rgb(h, s, v):
