@@ -6,25 +6,28 @@ GUI_OBJECTS = []  # this Holds all the main wrapper objects created
 pygame.font.init()  # used for font... duh
 GLOBAL_FONT = "Century Gothic"
 
+
 class GUI_REGION:
 	def __init__(self, x, y, w, h):
 		self.HB_pos = createVector(x, y)
 		self.HB_dim = createVector(w, h)
+		self.mouseRelativeToWindow = createVector()
 
 	def IN_COLLISION_CHECK(self, mVec):
-		if mVec[0] > self.HB_pos.x - 2 and mVec[0] < self.HB_pos.x + self.HB_dim.x + 2:
-			if mVec[1] > self.HB_pos.y - 10 and mVec[1] < self.HB_pos.y + self.HB_dim.y + 2:
+		if self.HB_pos.x - 2 < mVec[0] < self.HB_pos.x + self.HB_dim.x + 2:
+			if self.HB_pos.y - 10 < mVec[1] < self.HB_pos.y + self.HB_dim.y + 2:
 				# mouseRelativeToBox = createVector(mVec[0] - self.HB_pos.x, mVec[1] - self.HB_pos.y)
 				return True
 		return False
+
 
 class Object(GUI_REGION):
 	def __init__(self, x, y, w, h):
 		super().__init__(x, y, w, h)
 		self.pos = createVector(x, y)
+		self.starting_pos = createVector(self.pos.x, self.pos.y)
 		self.dimensions = createVector(w, h)
 
-		self.mouseReference = (0, 0)
 
 # Colour Conversion functions mainly used in colour slider
 def hsv2rgb(h, s, v):
@@ -41,6 +44,7 @@ class Wrapper(GUI_REGION):
 	def __init__(self, x, y, w, h, elem: list, nametag="", textColour=(255,255,255)):
 		super().__init__(x, y, w, h)
 		self.wrapperPos = createVector(x, y)
+		self.start_wPos = createVector(self.wrapperPos.x, self.wrapperPos.y)
 		self.dimensions = createVector(w, h)
 
 		self.GUI_ELEMENTS = elem  # each wrapper can only contain 1 element
@@ -51,6 +55,27 @@ class Wrapper(GUI_REGION):
 
 		self.isOpen = False  # boolean for if the wrapper is "open"/visible
 		self.textColour = textColour
+
+		self.beingDragged = False
+		self.mouseRelativeToWindow = createVector()
+		self.mouseReference = (0, 0)
+
+	def is_selecting_wrapper_top_bar(self, mVec):
+		# if between window x
+		if self.wrapperPos.x - 2 < mVec[0] < self.wrapperPos.x + self.dimensions.x + 2:
+			# if between window top bar y
+			if self.wrapperPos.y - 10 < mVec[1] < self.wrapperPos.y:
+				return True
+		return False
+
+	def top_bar_drag(self, mVec):
+		self.wrapperPos.x = mVec[0] - self.mouseRelativeToWindow.x
+		self.wrapperPos.y = mVec[1] - self.mouseRelativeToWindow.y
+
+		change_in_pos = createVector(self.wrapperPos.x - self.start_wPos.x, self.wrapperPos.y - self.start_wPos.y)
+		for idx, elem in enumerate(self.GUI_ELEMENTS):
+			self.__OBJPosInWindow[idx] = elem.starting_pos + self.wrapperPos
+			self.HB_pos = self.wrapperPos
 
 	def show(self, screen):
 		pygame.draw.rect(screen, (12, 12, 12),
@@ -345,8 +370,24 @@ def handleEvents(event, mVec, screen):
 	for idx, wrapper in enumerate(GUI_OBJECTS):  # loop over all wrappers
 		if wrapper.isOpen:
 			collision = wrapper.IN_COLLISION_CHECK(mVec)  # check for collisions using mouse position
+
 			if type(wrapper) == TabSystem:
 				wrapper.hovering = False
+			else:
+				selecting_top_bar = wrapper.is_selecting_wrapper_top_bar(mVec)
+
+				if selecting_top_bar:
+					if event.type == pygame.MOUSEBUTTONDOWN:
+						if event.button == 1:
+							wrapper.beingDragged = True
+							wrapper.mouseRelativeToWindow.x = mVec[0] - wrapper.wrapperPos.x
+							wrapper.mouseRelativeToWindow.y = mVec[1] - wrapper.wrapperPos.y
+					if event.type == pygame.MOUSEBUTTONUP:
+						if event.button == 1:
+							wrapper.beingDragged = False
+
+				if event.type == pygame.MOUSEMOTION:
+					if wrapper.beingDragged: wrapper.top_bar_drag(mVec)
 
 			if collision:
 				if type(wrapper) == TabSystem:
@@ -363,7 +404,6 @@ def handleEvents(event, mVec, screen):
 
 					elif event.type == pygame.MOUSEMOTION:
 						wrapper.MouseMotion()
-
 
 				else:
 					for idx, element in enumerate(wrapper.GUI_ELEMENTS):
