@@ -18,7 +18,6 @@ BLUE = (0, 0, 255)
 # initialize pygame and create window
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Collision Demo")
 clock = pygame.time.Clock()     ## For syncing the FPS
 
 class Board:
@@ -113,7 +112,8 @@ def main():
 
 	# GUI n SHIIIIIII
 	show_special_button = GEWY.Button(10, 10, 25, 25, "Show View")
-	show_special_wrapper = GEWY.Wrapper(20, 40, 105, 50, [show_special_button], "View Options")
+	show_rainbow_button = GEWY.Button(10, 45, 25, 25, "rainbow")
+	show_special_wrapper = GEWY.Wrapper(20, 40, 105, 80, [show_special_button, show_rainbow_button], "View Options")
 	GEWY.GUI_OBJECTS.append(show_special_wrapper)
 
 	speed_slider = GEWY.VariableSlider(5, 32, 200, 1, 15, "Speed", True, 5)
@@ -128,13 +128,18 @@ def main():
 
 	main_board = Board(75)
 	player = Player(WIDTH/2, 250, (0,255,0))
+	ColIDX = 0  
 
 	# Game loop
 	running = True
 	while running:
 
+		pygame.display.set_caption(f'Collision Demo: {round(clock.get_fps(), 2)}')
+
+		col = GEWY.hsv2rgb(ColIDX % 360, 100, 100)  # hsv is easy to make rainbow
+
 		player.speed = speed_slider.returnValue()
-		player.col = player_colour_slider.returnColour()
+		player.col = player_colour_slider.returnColour() if not show_rainbow_button.returnState() else col
 
 		#1 Process input/events
 		clock.tick(FPS)     ## will make the loop run at the same speed all the time
@@ -158,7 +163,10 @@ def main():
 
 		# Done after drawing everything to the screen
 		GEWY.display(screen)  # displays all GEWY elements
-		pygame.display.flip()       
+		pygame.display.flip()   
+
+		ColIDX += 2  # speed of rainbow 
+		ColIDX %= 360  # keep idx between 0 and 360
 
 	pygame.quit()
 
