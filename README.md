@@ -5,5 +5,4 @@ Requires VOBJ.py to work
 
 ![Example Use](colourSlider_VariableSlider.jpg)
 
-: Features
-
+Features:
