@@ -1,5 +1,4 @@
 import pygame
-import math
 from VOBJ import createVector
 import VOBJ
 import GEWY
@@ -18,7 +17,7 @@ BLUE = (0, 0, 255)
 # initialize pygame and create window
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-clock = pygame.time.Clock()     ## For syncing the FPS
+clock = pygame.time.Clock()   # For syncing the FPS
 
 class Board:
 	def __init__(self, cs: int):
@@ -83,13 +82,12 @@ class Player:
 
 		# loop over each clamped point
 		for idx, point in enumerate(clamped_points):
-			vPointToPlayer = point - self.pos  # get vector from player to point
+			vPointToPlayer = self.pos - point  # get vector from player to point
 			DistToPlayer = vPointToPlayer.mag()  # get mag for overlap calc
-			if DistToPlayer - self.radius < 0 and DistToPlayer:  # make sure Dist > 0
+			if DistToPlayer < self.radius and DistToPlayer:  # make sure Dist > 0
 				vPointToPlayer.normalize()
-				vPointToPlayer *= DistToPlayer - self.radius  # scale by overlap
+				vPointToPlayer *= self.radius - DistToPlayer  # scale by overlap
 				self.pos += vPointToPlayer
-
 
 	def update(self):
 		if self.vel.mag(): self.vel.normalize()
@@ -107,6 +105,7 @@ class Player:
 	def show(self, screen, board: Board, dispView: True):
 		if dispView: self.__show_view(screen, board)
 		pygame.draw.circle(screen, self.col, (self.pos.x, self.pos.y), self.radius)
+
 
 def main():
 

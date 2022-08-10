@@ -41,11 +41,14 @@ class createVector:
 		self.x *= n
 		self.y *= n
 
+
 def min(a, b):
 	return a if a < b else b
 
+
 def max(a, b):
 	return a if a > b else b
+
 
 def clamp(n, lr, ur):
 	return min(max(lr, n), ur)

@@ -72,7 +72,6 @@ class Wrapper(GUI_REGION):
 		self.wrapperPos.x = mVec[0] - self.mouseRelativeToWindow.x
 		self.wrapperPos.y = mVec[1] - self.mouseRelativeToWindow.y
 
-		change_in_pos = createVector(self.wrapperPos.x - self.start_wPos.x, self.wrapperPos.y - self.start_wPos.y)
 		for idx, elem in enumerate(self.GUI_ELEMENTS):
 			self.__OBJPosInWindow[idx] = elem.starting_pos + self.wrapperPos
 			self.HB_pos = self.wrapperPos
@@ -259,6 +258,11 @@ class TabSystem(GUI_REGION):
 			currentState = self.__systemTabs[TabSelected].isOpen
 			self.__systemTabs[TabSelected].isOpen = True if not currentState else False
 
+			if self.__systemTabs[TabSelected].isOpen:
+				# move position of wrapper to front of "line"
+				GUI_OBJECTS.remove(self.__systemTabs[TabSelected])
+				GUI_OBJECTS.append(self.__systemTabs[TabSelected])
+
 	def LeftButtonUp(self):  # interaction functions need to made but no functionality needs to be added.
 		pass
 
@@ -325,6 +329,7 @@ class VariableSlider(Object):
 		screen.blit(textsurface1, (self.pos.x + 5, self.pos.y - 26))  # 5, -26 are random constants that I think look good.
 		self.vslider.show(screen)
 
+
 class Button(Object):
 	def __init__(self, x, y, w, h, nt="", state=False, textOffset = (5, -2), textColour=(255,255,255)):
 		super().__init__(x, y, w, h)
@@ -367,13 +372,20 @@ def handleEvents(event, mVec, screen):
 	"""Handles all Gui interactions"""
 	global GUI_OBJECTS
 
-	for idx, wrapper in enumerate(GUI_OBJECTS):  # loop over all wrappers
+	wrapper_z_buffer = []
+	wrapper_moved_to_front = False
+	front_wrapper_dragged = False
+
+	for jdx, wrpOBJ in enumerate(GUI_OBJECTS):
+		if wrpOBJ.isOpen: wrapper_z_buffer.insert(0, wrpOBJ)
+
+	for idx, wrapper in enumerate(wrapper_z_buffer):  # loop over all wrappers
 		if wrapper.isOpen:
 			collision = wrapper.IN_COLLISION_CHECK(mVec)  # check for collisions using mouse position
 
 			if type(wrapper) == TabSystem:
 				wrapper.hovering = False
-			else:
+			elif not front_wrapper_dragged:
 				selecting_top_bar = wrapper.is_selecting_wrapper_top_bar(mVec)
 
 				if selecting_top_bar:
@@ -382,6 +394,7 @@ def handleEvents(event, mVec, screen):
 							wrapper.beingDragged = True
 							wrapper.mouseRelativeToWindow.x = mVec[0] - wrapper.wrapperPos.x
 							wrapper.mouseRelativeToWindow.y = mVec[1] - wrapper.wrapperPos.y
+
 					if event.type == pygame.MOUSEBUTTONUP:
 						if event.button == 1:
 							wrapper.beingDragged = False
@@ -389,7 +402,10 @@ def handleEvents(event, mVec, screen):
 				if event.type == pygame.MOUSEMOTION:
 					if wrapper.beingDragged: wrapper.top_bar_drag(mVec)
 
+				front_wrapper_dragged = True
+
 			if collision:
+
 				if type(wrapper) == TabSystem:
 					wrapper.mouseReference = mVec
 					wrapper.MouseHover(screen)
@@ -412,6 +428,12 @@ def handleEvents(event, mVec, screen):
 						if event.type == pygame.MOUSEBUTTONDOWN:
 							if event.button == 1:
 								element.LeftButtonDown()
+
+								if not wrapper_moved_to_front:
+									# move current wrapper to front
+									GUI_OBJECTS.remove(wrapper)
+									GUI_OBJECTS.append(wrapper)
+									wrapper_moved_to_front = True
 
 						elif event.type == pygame.MOUSEBUTTONUP:
 							if event.button == 1:
