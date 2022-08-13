@@ -116,13 +116,23 @@ def main():
 	GEWY.GUI_OBJECTS.append(show_special_wrapper)
 
 	speed_slider = GEWY.VariableSlider(5, 32, 200, 1, 15, "Speed", True, 5)
-	player_colour_slider = GEWY.ColourSlider(10, 80, 200, 25, 15, (0,255,0))
+	player_colour_slider = GEWY.ColourSlider(10, 80, 200, 25, 15, (0, 255, 0), 255, "Circle Colour")
 	speed_slider_wrapper = GEWY.Wrapper(10, 40, 230, 200, [speed_slider, player_colour_slider], "Player Options")
 	GEWY.GUI_OBJECTS.append(speed_slider_wrapper)
+
+	sec1 = GEWY.dataSlice(0.2, "boobs")
+	sec2 = GEWY.dataSlice(0.25, "balls")
+	sec3 = GEWY.dataSlice(0.05, "butt")
+	sec4 = GEWY.dataSlice(0.3, "shlong")
+	sec5 = GEWY.dataSlice(0.2, "hispanic")
+	Test_pieChart = GEWY.PieChart(125, 130, 100, [sec1, sec2, sec3, sec4, sec5], "Projection of profits from this fiscal year")
+	PieChart_Wrapper = GEWY.Wrapper(20, 40, 250, 250, [Test_pieChart], "Pie Chart Test")
+	GEWY.GUI_OBJECTS.append(PieChart_Wrapper)
 
 	Tabs = GEWY.TabSystem(textColour=(0,0,0))  # mufuckiiin tab system
 	Tabs.addTab(show_special_wrapper)
 	Tabs.addTab(speed_slider_wrapper)
+	Tabs.addTab(PieChart_Wrapper)
 	GEWY.GUI_OBJECTS.append(Tabs)
 
 	main_board = Board(75)
@@ -162,12 +172,13 @@ def main():
 
 		# Done after drawing everything to the screen
 		GEWY.display(screen)  # displays all GEWY elements
-		pygame.display.flip()   
+		pygame.display.flip()
 
 		ColIDX += 2  # speed of rainbow 
 		ColIDX %= 360  # keep idx between 0 and 360
 
 	pygame.quit()
+
 
 if __name__ == "__main__":
 	main()
