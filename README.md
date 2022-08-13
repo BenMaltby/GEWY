@@ -9,6 +9,7 @@ Requires VOBJ.py to work
  - Buttons
  - Variable Sliders
  - Colour Sliders
+ - Pie Charts
  - Tab System
  - Moveable windows
  - Window heirarchy system
