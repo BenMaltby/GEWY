@@ -1,6 +1,8 @@
+import math
 from VOBJ import createVector
 import colorsys
 import pygame
+from random import randint as rInt
 
 GUI_OBJECTS = []  # this Holds all the main wrapper objects created
 pygame.font.init()  # used for font... duh
@@ -122,7 +124,7 @@ class Slider:
 
 
 class ColourSlider(Object):
-	def __init__(self, x, y, width, height, slideSpacing, startingColour=(52, 1, 254)):  # old:(253, 20, 220)
+	def __init__(self, x, y, width, height, slideSpacing, startingColour=(52, 1, 254), resolution=20, title="", textColour=(255,255,255)):  # old:(253, 20, 220)
 		super().__init__(x, y, width, height)  # instantiating the Object
 		self.slideSpacing = slideSpacing  # spacing in pixels between hue, saturation and brightness bars
 
@@ -131,11 +133,13 @@ class ColourSlider(Object):
 		self.saturationSlider = Slider(x, y + (height + self.slideSpacing), width, height, self.SC[1] - 1, (0, 100))
 		self.brightnessSlider = Slider(x, y + 2 * (height + self.slideSpacing), width, height, self.SC[2] - 1, (0, 100))
 
-		self.resolution = 20
+		self.resolution = resolution
 		self.hueIncr = 360 / self.resolution
 		self.satIncr = 100 / self.resolution
 		self.briIncr = 100 / self.resolution
 		self.PTWidth = self.dimensions.x / self.resolution
+		self.textColour = textColour
+		self.title = title
 
 	def returnColour(self) -> tuple:
 		hue = self.hueSlider.returnValue()
@@ -194,6 +198,11 @@ class ColourSlider(Object):
 		self.brightnessSlider.SliderPos = self.brightnessSlider.calculateSliderPos()
 
 	def show(self, screen) -> None:
+
+		titleFont = pygame.font.SysFont(GLOBAL_FONT, 17)
+		tSurface = titleFont.render(self.title, True, self.textColour)
+		screen.blit(tSurface, (self.pos.x, self.pos.y - 20))
+
 		for i in range(self.resolution):
 			r, g, b = hsv2rgb((i * self.hueIncr), self.saturationSlider.returnValue(), self.brightnessSlider.returnValue())
 			pygame.draw.rect(screen, (r, g, b), pygame.Rect(self.pos.x + (i * self.PTWidth), self.pos.y, self.PTWidth + 1, self.dimensions.y))
@@ -366,6 +375,96 @@ class Button(Object):
 
 		screen.blit(textsurface,
 					(self.pos.x + self.dimensions.x + self.textOffset[0], self.pos.y - self.textOffset[1]))  # 5, -2 are random constants that I think look good.
+
+
+class dataSlice:
+	def __init__(self, n=0, title=""):
+		self.value = n
+		self.col = (rInt(0, 255), rInt(0, 255), rInt(0, 255))
+		self.open = False
+		self.title = title
+
+	def __repr__(self):
+		return f'{self.value * 10}%'
+
+
+class PieChart(Object):
+	def __init__(self, x, y, radius, data: list[dataSlice], title="", textColour=(255,255,255)):
+		super().__init__(x - radius, y - radius, radius*2, radius*2)
+		self.radius = radius
+		self.pie_chart_data = data
+		self.__raw_data = [n.value for n in self.pie_chart_data]
+		self.pie_chart_data.insert(0, dataSlice())
+		self.title = title
+		self.titleColour = textColour
+
+	def LeftButtonDown(self):
+		mVec = createVector(self.mouseReference[0], self.mouseReference[1])
+		vToMouse = createVector(self.pos.x + self.radius - mVec.x, self.pos.y + self.radius - mVec.y)
+
+		if vToMouse.mag() < self.radius:
+			insideAngle = (math.atan2(vToMouse.y, vToMouse.x) + math.pi) / math.tau
+
+			sector = 1
+			for idx, val in enumerate(self.__raw_data):
+				insideAngle -= val
+				if insideAngle > 0: sector += 1
+				else: break
+
+			self.pie_chart_data[sector].open = False if self.pie_chart_data[sector].open else True
+
+	def LeftButtonUp(self):
+		pass
+
+	def MouseMotion(self):
+		pass
+
+	def show(self, screen):
+
+		# pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(self.pos.x, self.pos.y, self.radius*2, self.radius*2), 2)
+
+		if len(self.__raw_data) > 0 and sum(self.__raw_data) == 1:
+			cx, cy, r = self.pos.x, self.pos.y, self.radius
+
+			ntag = pygame.font.SysFont(GLOBAL_FONT, 17)
+			textsurface = ntag.render(self.title, True, self.titleColour)
+			screen.blit(textsurface, (cx, cy - 20))
+
+			sum_of_data = 0
+
+			# iterate of each percentage
+			for d in range(1, len(self.pie_chart_data)):
+				obj = self.pie_chart_data[d]
+				angle_start = math.tau * sum_of_data
+				sum_of_data += obj.value
+				angle_end = math.tau * sum_of_data
+
+				# draw the sector
+				cAngle = angle_start
+				while cAngle <= angle_end:
+					px = self.radius * math.cos(cAngle) + cx + r
+					py = self.radius * math.sin(cAngle) + cy + r
+
+					pygame.draw.line(screen, obj.col, (cx + r, cy + r), (px, py), int(self.radius*0.06))
+					cAngle += math.pi/90
+
+			pygame.draw.circle(screen, (0, 0, 0), (cx + r, cy + r), self.radius + self.radius * 0.05, int(self.radius*0.05))
+
+			for idx, obj in enumerate(self.pie_chart_data):
+				if obj.open:
+					titleTag = pygame.font.SysFont(GLOBAL_FONT, 20)
+					textsurface = titleTag.render(f'{int(obj.value * 100)}% {obj.title}', True, (0, 0, 0))
+
+					angle = ((self.__raw_data[idx - 1] / 2) + sum(self.__raw_data[:idx - 1])) * math.tau
+					tx = (r / 1.8) * math.cos(angle) + self.pos.x + r
+					ty = (r / 1.8) * math.sin(angle) + self.pos.y + r
+					screen.blit(textsurface, (tx - len(obj.title) * 6, ty))
+
+		else:
+			pygame.draw.circle(screen, (0, 0, 0), (self.pos.x + self.radius, self.pos.y + self.radius), self.radius)
+			errMsg = pygame.font.SysFont(GLOBAL_FONT, 20)
+			textsurface = errMsg.render("Incorrect Pie Chart Entries", True, (255, 255, 255))
+			screen.blit(textsurface, (self.pos.x + self.radius/5, self.pos.y + self.radius))
 
 
 def handleEvents(event, mVec, screen):
