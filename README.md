@@ -3,7 +3,7 @@ Basic, light-weight Imperative GUI library for pygame
 
 Requires VOBJ.py to work
 
-![Example Use](colourSlider_VariableSlider.jpg)
+![Example Use](GEWY_Screenshot.png)
 
 # Features:
  - Buttons
