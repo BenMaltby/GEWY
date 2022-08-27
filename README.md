@@ -1,7 +1,7 @@
 # GEWY
 Basic, light-weight Imperative GUI library for pygame
 
-Requires VOBJ.py to work
+Requires included file: VOBJ.py
 
 <img src="GEWY_Screenshot.png" width="604" height="458">
 
