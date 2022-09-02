@@ -43,7 +43,7 @@ def rgb2hsv(r, g, b):
 
 class Wrapper(GUI_REGION):
 	"""Wrapper objects are the tabs or windows that hold gui elements"""
-	def __init__(self, x, y, w, h, elem: list, nametag="", textColour=(255,255,255)):
+	def __init__(self, x, y, w, h, elem: list, nametag="", textColour=(255,255,255), show_window=True):
 		super().__init__(x, y, w, h)
 		self.wrapperPos = createVector(x, y)
 		self.start_wPos = createVector(self.wrapperPos.x, self.wrapperPos.y)
@@ -62,6 +62,8 @@ class Wrapper(GUI_REGION):
 		self.mouseRelativeToWindow = createVector()
 		self.mouseReference = (0, 0)
 
+		self.show_window = show_window
+
 	def is_selecting_wrapper_top_bar(self, mVec):
 		# if between window x
 		if self.wrapperPos.x - 2 < mVec[0] < self.wrapperPos.x + self.dimensions.x + 2:
@@ -70,20 +72,22 @@ class Wrapper(GUI_REGION):
 				return True
 		return False
 
-	def top_bar_drag(self, mVec):
-		self.wrapperPos.x = mVec[0] - self.mouseRelativeToWindow.x
-		self.wrapperPos.y = mVec[1] - self.mouseRelativeToWindow.y
+	def top_bar_drag(self, mVec = None):
+		if mVec:
+			self.wrapperPos.x = mVec[0] - self.mouseRelativeToWindow.x
+			self.wrapperPos.y = mVec[1] - self.mouseRelativeToWindow.y
 
 		for idx, elem in enumerate(self.GUI_ELEMENTS):
 			self.__OBJPosInWindow[idx] = elem.starting_pos + self.wrapperPos
 			self.HB_pos = self.wrapperPos
 
 	def show(self, screen):
-		pygame.draw.rect(screen, (12, 12, 12),
-						 pygame.Rect(self.wrapperPos.x - 2, self.wrapperPos.y - 10, self.dimensions.x + 4,
-									 self.dimensions.y + 12))
-		pygame.draw.rect(screen, (28, 28, 28),
-						 pygame.Rect(self.wrapperPos.x, self.wrapperPos.y, self.dimensions.x, self.dimensions.y))
+		if self.show_window: 
+			pygame.draw.rect(screen, (12, 12, 12),
+							pygame.Rect(self.wrapperPos.x - 2, self.wrapperPos.y - 10, self.dimensions.x + 4,
+										self.dimensions.y + 12))
+			pygame.draw.rect(screen, (28, 28, 28),
+							pygame.Rect(self.wrapperPos.x, self.wrapperPos.y, self.dimensions.x, self.dimensions.y))
 
 		for idx, element in enumerate(self.GUI_ELEMENTS):
 			element.pos = self.__OBJPosInWindow[idx]
@@ -245,6 +249,10 @@ class TabSystem(GUI_REGION):
 		self.HB_dim.x = (20 * len(self.__systemTabs))
 		self.tDim.x = self.HB_dim.x
 
+	def disableAllTabs(self):
+		for idx, tab in enumerate(self.__systemTabs):
+			tab.isOpen = False
+
 	def __calcTabIndex(self):
 
 		for i in range(len(self.__systemTabs)):
@@ -281,16 +289,16 @@ class TabSystem(GUI_REGION):
 	def show(self, screen):
 		if self.__systemTabs:  # if it has any wrappers
 			# Construct Box
-			pygame.draw.rect(screen, (12, 12, 12), pygame.Rect(self.tPos.x-2, self.tPos.y, self.tDim.x+4, self.tDim.y+2))
+			pygame.draw.rect(screen, (12, 12, 12), pygame.Rect(self.tPos.x-2, self.tPos.y-2, self.tDim.x+4, self.tDim.y+4))
 			pygame.draw.rect(screen, (28, 28, 28), pygame.Rect(self.tPos.x, self.tPos.y, self.tDim.x, self.tDim.y))
 
 			# draw circle tabs
 			for i, wr in enumerate(self.__systemTabs):
-				pygame.draw.circle(screen, (70, 70, 70), (self.tPos.x + (20*i + 10), (self.tDim.y-self.tPos.y)/2), self.r, 0 if wr.isOpen else 1)  # 0 = filled, 1 = border
+				pygame.draw.circle(screen, (70, 70, 70), (self.tPos.x + (20*i + 10), self.tPos.y + (self.tDim.y/2)), self.r, 0 if wr.isOpen else 1)  # 0 = filled, 1 = border
 
 
 class VariableSlider(Object):
-	def __init__(self, x, y, w, min, max, nt="", displayValue=False, sVal=-1):
+	def __init__(self, x, y, w, min, max, nt="", displayValue=False, sVal=-1, fontSize=17, textOffset=(5, -26)):
 		super().__init__(x, y, w, 5)
 		self.displayValue = displayValue
 		self.sVal = (max-min)*0.5 + min if sVal == -1 else sVal  # starting value
@@ -299,6 +307,8 @@ class VariableSlider(Object):
 		self.min = min
 		self.max = max
 		self.nameTag = nt
+		self.fontSize = fontSize
+		self.textOffset = textOffset
 
 	def returnValue(self):
 		return self.vslider.returnValue()
@@ -328,24 +338,26 @@ class VariableSlider(Object):
 		pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(self.pos.x, self.pos.y, self.dimensions.x, self.dimensions.y))
 		self.vslider.pos = createVector(self.pos.x, self.pos.y-(self.vslider.dimensions.y-5)/2)
 
-		ntag = pygame.font.SysFont(GLOBAL_FONT, 17)
+		ntag = pygame.font.SysFont(GLOBAL_FONT, self.fontSize)
 		textsurface1 = ntag.render(self.nameTag, True, (255, 255, 255))
 
 		if self.displayValue:
 			textsurface2 = ntag.render(f'{round(self.returnValue(), 1)}', True, (255, 255, 255))
 			screen.blit(textsurface2,(self.pos.x + self.dimensions.x + 5, self.pos.y))
 
-		screen.blit(textsurface1, (self.pos.x + 5, self.pos.y - 26))  # 5, -26 are random constants that I think look good.
+		screen.blit(textsurface1, (self.pos.x + self.textOffset[0], self.pos.y + self.textOffset[1]))  # 5, -26 are random constants that I think look good.
 		self.vslider.show(screen)
 
 
 class Button(Object):
-	def __init__(self, x, y, w, h, nt="", state=False, textOffset = (5, -2), textColour=(255,255,255)):
+	def __init__(self, x, y, w, h, nt="", state=False, textOffset = (5, -2), textColour=(255,255,255), textSize=17, tp_back=False):
 		super().__init__(x, y, w, h)
 		self.state = state
 		self.nameTag = nt
 		self.textOffset = textOffset
 		self.textColour = textColour
+		self.textSize = textSize
+		self.tp_background = tp_back
 
 	def returnState(self) -> bool:
 		return self.state
@@ -364,13 +376,14 @@ class Button(Object):
 		pass
 
 	def show(self, screen):
-		pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(self.pos.x-1, self.pos.y-1, self.dimensions.x+2, self.dimensions.y+2))
-		if self.state:
-			pygame.draw.rect(screen, (195, 195, 195), pygame.Rect(self.pos.x, self.pos.y, self.dimensions.x, self.dimensions.y))
-		elif not self.state:
-			pygame.draw.rect(screen, (70, 70, 70), pygame.Rect(self.pos.x, self.pos.y, self.dimensions.x, self.dimensions.y))
+		if not self.tp_background:
+			pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(self.pos.x-1, self.pos.y-1, self.dimensions.x+2, self.dimensions.y+2))
+			if self.state:
+				pygame.draw.rect(screen, (195, 195, 195), pygame.Rect(self.pos.x, self.pos.y, self.dimensions.x, self.dimensions.y))
+			elif not self.state:
+				pygame.draw.rect(screen, (70, 70, 70), pygame.Rect(self.pos.x, self.pos.y, self.dimensions.x, self.dimensions.y))
 
-		ntag = pygame.font.SysFont(GLOBAL_FONT, 17)
+		ntag = pygame.font.SysFont(GLOBAL_FONT, self.textSize)
 		textsurface = ntag.render(self.nameTag, True, self.textColour)
 
 		screen.blit(textsurface,
