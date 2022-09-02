@@ -12,4 +12,5 @@ Requires included file: VOBJ.py
  - Pie Charts
  - Tab System
  - Moveable windows
- - Window heirarchy system
+ - Window hierarchy ![image](https://user-images.githubusercontent.com/91958897/188215968-9d5b6b96-529b-4861-b994-e0ac68607df1.png)
+ system
