@@ -1,5 +1,5 @@
 # GEWY
-Basic, light-weight Imperative GUI library for pygame
+Basic, light-weight Declarative GUI library for pygame
 
 Requires included file: VOBJ.py
 
