@@ -1,5 +1,5 @@
 # GEWY
-Basic, light-weight Declarative GUI library for pygame
+Basic, light-weight Declarative Retained-mode GUI library for pygame
 
 Requires included file: VOBJ.py
 
